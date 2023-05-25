@@ -15,7 +15,7 @@ public class GUI extends JFrame implements ActionListener {
     public GUI(){
         setTitle("Business Email Generator");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400, 300);
+        setSize(450, 350);
         setLocationRelativeTo(null);
 
         JPanel mainPanel = new JPanel();
@@ -89,31 +89,45 @@ public class GUI extends JFrame implements ActionListener {
         generateButton.addActionListener(this);
         mainPanel.add(generateButton, gbc);
 
+        gbc.gridx = 0;
+        gbc.gridy = 8;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JButton addButton = new JButton("Add Record");
+        addButton.addActionListener(this);
+        mainPanel.add(addButton, gbc);
+
         add(mainPanel);
     }
 
     public void actionPerformed(ActionEvent e) {
+        String firstName;
+        String lastName;
+        String email;
+        String password;
+        
         if (e.getActionCommand().equals("Generate")) {
-            String firstName = firstNameField.getText();
-            String lastName = lastNameField.getText();
+            firstName = firstNameField.getText();
+            lastName = lastNameField.getText();
             String company = companyField.getText();
             Email_Gen newEmail = new Email_Gen();
             Password_Gen newPass = new Password_Gen();
+            Database newDatabase = new Database();
 
             if (!firstName.isEmpty() && !lastName.isEmpty() && !company.isEmpty() )
             {
-                String email = newEmail.generateEmail(firstName, lastName, company);
+                email = newEmail.generateEmail(firstName, lastName, company);
                 emailField.setText(email);
 
-                String password = newPass.generateRandomPassword();
+                password = newPass.generateRandomPassword();
                 passwordField.setText(password);
-                
+
+                newDatabase.insertDatabase(firstName, lastName, email, password);                
             }
             else{
 
                 JOptionPane.showMessageDialog(rootPane, "Fields can't be blank, please fill out all fields.");
-            }
-            
-        }
+            }            
+        } 
     }
 }
