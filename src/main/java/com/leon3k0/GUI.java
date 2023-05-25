@@ -1,6 +1,10 @@
 package com.leon3k0;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,94 +15,90 @@ public class GUI extends JFrame implements ActionListener {
     private JTextField companyField;
     private JTextField emailField;
     private JTextField passwordField;
+    private JTable dataTable;
+    private DefaultTableModel tableModel;
 
     public GUI(){
         setTitle("Business Email Generator");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(450, 350);
-        setLocationRelativeTo(null);
+        setSize(800, 600);
+        setLocationRelativeTo(null); 
 
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new GridBagLayout());
+        JPanel mainPanel = new JPanel(new BorderLayout());
+
+        JPanel formPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10); // Add padding between fields
 
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.WEST;
-        mainPanel.add(new JLabel("First Name:"), gbc);
+        formPanel.add(new JLabel("First Name:"), gbc);
 
-        gbc.gridx = 1;
-        gbc.gridy = 0;
+        gbc.gridy = 1;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         firstNameField = new JTextField();
-        mainPanel.add(firstNameField, gbc);
+        formPanel.add(firstNameField, gbc);
 
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        mainPanel.add(new JLabel("Last Name:"), gbc);
+        gbc.gridy = 2;
+        formPanel.add(new JLabel("Last Name:"), gbc);
 
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        gbc.weightx = 1.0;
+        gbc.gridy = 3;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         lastNameField = new JTextField();
-        mainPanel.add(lastNameField, gbc);
+        formPanel.add(lastNameField, gbc);
 
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        mainPanel.add(new JLabel("Company:"), gbc);
+        gbc.gridy = 4;
+        formPanel.add(new JLabel("Company:"), gbc);
 
-        gbc.gridx = 1;
-        gbc.gridy = 2;
-        gbc.weightx = 1.0;
+        gbc.gridy = 5;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         companyField = new JTextField();
-        mainPanel.add(companyField, gbc);
+        formPanel.add(companyField, gbc);
 
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 2;
-        mainPanel.add(new JLabel("Email:"), gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.gridwidth = 2;
-        emailField = new JTextField();
-        emailField.setEditable(false);
-        mainPanel.add(emailField, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        mainPanel.add(new JLabel("Password:"), gbc);
-
-        gbc.gridx = 0;
         gbc.gridy = 6;
-        gbc.gridwidth = 2;
-        passwordField = new JTextField();
-        passwordField.setEditable(false);
-        mainPanel.add(passwordField, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 7;
-        gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
-        JButton generateButton = new JButton("Generate");
-        generateButton.addActionListener(this);
-        mainPanel.add(generateButton, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 8;
-        gbc.gridwidth = 2;
-        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.NORTH;
         JButton addButton = new JButton("Add Record");
         addButton.addActionListener(this);
-        mainPanel.add(addButton, gbc);
+        formPanel.add(addButton, gbc);
+
+        mainPanel.add(formPanel, BorderLayout.WEST);
+
+        dataTable = new JTable();
+        JScrollPane scrollPane = new JScrollPane(dataTable);
+        scrollPane.setPreferredSize(new Dimension(400, 300)); // Set the initial preferred size of the scroll pane
+        Border border = BorderFactory.createCompoundBorder(
+                new EmptyBorder(10, 10, 10, 10), // Add spacing (10 pixels) around the table
+                new LineBorder(Color.BLACK) // Add a black line border around the table
+        );
+        scrollPane.setBorder(border);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+
+        tableModel = new DefaultTableModel(new Object[]{"ID", "First Name", "Last Name", "Email", "Temp Password"}, 0);
+        dataTable.setModel(tableModel);
+
 
         add(mainPanel);
+
+        pack();
+
+         // Add a component listener to the frame for resizing events
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                resizeTable();
+            }
+        });
     }
+
+    private void resizeTable() {
+        // Set the table's preferred size based on the available space
+        int tableWidth = getContentPane().getWidth() - 200; // Adjust the width as needed
+        int tableHeight = getContentPane().getHeight() - 20; // Adjust the height as needed
+        dataTable.setPreferredScrollableViewportSize(new Dimension(tableWidth, tableHeight));
+    }
+
 
     public void actionPerformed(ActionEvent e) {
         String firstName;
