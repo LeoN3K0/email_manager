@@ -2,7 +2,7 @@ package com.leon3k0;
 
 
 
-public class Email_Gen {   
+public class EmailGenerator{   
     public String generateEmail(String firstName, String lastName, String company) {
         String sanitizedFirstName = firstName.toLowerCase().replaceAll("\\s+", "");
         String sanitizedLastName = lastName.toLowerCase().replaceAll("\\s+", "");

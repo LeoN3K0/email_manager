@@ -22,7 +22,7 @@ public class GUI extends JFrame implements ActionListener {
     private JTextField passwordField;
     private JTable dataTable;
     private DefaultTableModel tableModel;
-    private Database databaseTB = new Database();
+    private DatabaseManager databaseTB = new DatabaseManager();
 
     public GUI() {
         setTitle("Business Email Generator");
@@ -30,6 +30,17 @@ public class GUI extends JFrame implements ActionListener {
         setSize(800, 600);
         setLocationRelativeTo(null);
 
+        createUI();
+
+        // Add a component listener to the frame for resizing events
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                resizeTable();
+            }
+        });
+    }
+
+    private void createUI() {
         JPanel mainPanel = new JPanel(new BorderLayout());
 
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -90,54 +101,22 @@ public class GUI extends JFrame implements ActionListener {
 
         dataTable = new JTable();
         JScrollPane scrollPane = new JScrollPane(dataTable);
-        scrollPane.setPreferredSize(new Dimension(375, 300)); // Set the initial preferred size of the scroll pane
+        scrollPane.setPreferredSize(new Dimension(375, 300));
         Border border = BorderFactory.createCompoundBorder(
-                new EmptyBorder(10, 10, 10, 10), // Add spacing (10 pixels) around the table
-                new LineBorder(Color.BLACK) // Add a black line border around the table
+                new EmptyBorder(10, 10, 10, 10),
+                new LineBorder(Color.BLACK)
         );
         scrollPane.setBorder(border);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         tableModel = new DefaultTableModel();
-
-        // Retrieve column names from the ResultSet metadata
-        ResultSetMetaData metaData = databaseTB.fetchMetaData();
-        int columnCount;
-        ResultSet resultSet = databaseTB.fetchData();
-        try {
-            columnCount = metaData.getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
-                tableModel.addColumn(metaData.getColumnName(i));
-            }
-
-            // Retrieve data rows from the ResultSet
-            while (resultSet.next()) {
-                Object[] rowData = new Object[columnCount];
-                for (int i = 1; i <= columnCount; i++) {
-                    rowData[i - 1] = resultSet.getObject(i);
-                }
-                tableModel.addRow(rowData);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            System.exit(0);
-        }
-
-        System.out.println("Gathered table data from database");
         dataTable.setModel(tableModel);
         dataTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        updateTableModel();
 
         add(mainPanel);
 
         pack();
-
-        // Add a component listener to the frame for resizing events
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent evt) {
-                resizeTable();
-            }
-        });
     }
 
     private void resizeTable() {
@@ -148,83 +127,80 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        String firstName;
-        String lastName;
-        String email;
-        String password;
-        Database newDatabase = new Database();
-
         if (e.getActionCommand().equals("Add Record")) {
-            firstName = firstNameField.getText();
-            lastName = lastNameField.getText();
-            String company = companyField.getText();
-            Email_Gen newEmail = new Email_Gen();
-            Password_Gen newPass = new Password_Gen();
-            
-
-            if (!firstName.isEmpty() && !lastName.isEmpty() && !company.isEmpty()) {
-                email = newEmail.generateEmail(firstName, lastName, company);
-                password = newPass.generateRandomPassword();
-                newDatabase.insertDatabase(firstName, lastName, email, password);
-
-                updateTableModel();
-                if (emailField != null) { // Check if emailField is not null
-                    emailField.setText(email); // Set email value to emailField
-                }
-                if (passwordField != null) { // Check if passwordField is not null
-                    passwordField.setText(password); // Set password value to passwordField
-                }
-                firstNameField.setText("");
-                lastNameField.setText("");
-                companyField.setText("");
-            } else {
-                JOptionPane.showMessageDialog(rootPane, "Fields can't be blank, please fill out all fields.");
-            }
+            addRecord();
+        } else if (e.getActionCommand().equals("Delete Record")) {
+            deleteRecord();
+        } else if (e.getActionCommand().equals("Export Table")) {
+            exportTable();
         }
-        if (e.getActionCommand().equals("Delete Record")) {
-            int col = 0;
+    }
 
-            if(dataTable.getSelectedRow() != -1)
-            {
-                int row = dataTable.getSelectedRow();
-                String val = dataTable.getValueAt(row, col).toString();
+    private void addRecord(){
+        String firstName = firstNameField.getText();
+        String lastName = lastNameField.getText();
+        String company = companyField.getText();
+        EmailGenerator emailGenerator = new EmailGenerator();
+        PasswordGenerator passwordGenerator = new PasswordGenerator();
 
-                newDatabase.deleteData(val);
-                updateTableModel();
+        if (!firstName.isEmpty() && !lastName.isEmpty() && !company.isEmpty()) {
+            String email = emailGenerator.generateEmail(firstName, lastName, company);
+            String password = passwordGenerator.generateRandomPassword();
+            databaseTB.insertData(firstName, lastName, email, password);
+
+            updateTableModel();
+            if (emailField != null) {
+                emailField.setText(email);
             }
-            else if(dataTable.getSelectedRow() == -1) {
-                JOptionPane.showMessageDialog(rootPane, "No Record Selecected, Please Delect a Record from the Table.");
+            if (passwordField != null) {
+                passwordField.setText(password);
             }
+            firstNameField.setText("");
+            lastNameField.setText("");
+            companyField.setText("");
+        } else {
+            JOptionPane.showMessageDialog(rootPane, "Fields can't be blank, please fill out all fields.");
         }
+    }
 
-        if (e.getActionCommand().equals("Export Table")){
-            
-            JFileChooser fileChooser = new JFileChooser();
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
-            fileChooser.setFileFilter(filter);
-            int returnValue = fileChooser.showSaveDialog(null);
-            if (returnValue == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
-                newDatabase.saveCSV(file);
-            }
+    private void deleteRecord() {
+        int col = 0;
+
+        if (dataTable.getSelectedRow() != -1) {
+            int row = dataTable.getSelectedRow();
+            String val = dataTable.getValueAt(row, col).toString();
+            int id = Integer.parseInt(val);
+
+            databaseTB.deleteData(id);
+            updateTableModel();
+        } else {
+            JOptionPane.showMessageDialog(rootPane, "No Record Selected, Please Select a Record from the Table.");
+        }
+    }
+
+    private void exportTable() {
+        JFileChooser fileChooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
+        fileChooser.setFileFilter(filter);
+        int returnValue = fileChooser.showSaveDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            databaseTB.saveCSV(file);
         }
     }
 
     private void updateTableModel() {
-        // Clear the existing data in the table model
         tableModel.setRowCount(0);
         tableModel.setColumnCount(0);
 
-        ResultSetMetaData metaData = databaseTB.fetchMetaData();
-        int columnCount;
-        ResultSet resultSet = databaseTB.fetchData();
-        try {
-            columnCount = metaData.getColumnCount();
+        try (ResultSet resultSet = databaseTB.fetchData()) {
+            ResultSetMetaData metaData = databaseTB.fetchMetaData();
+            int columnCount = metaData.getColumnCount();
+
             for (int i = 1; i <= columnCount; i++) {
                 tableModel.addColumn(metaData.getColumnName(i));
             }
 
-            // Retrieve data rows from the ResultSet
             while (resultSet.next()) {
                 Object[] rowData = new Object[columnCount];
                 for (int i = 1; i <= columnCount; i++) {
@@ -234,9 +210,7 @@ public class GUI extends JFrame implements ActionListener {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            System.exit(0);
+            JOptionPane.showMessageDialog(null, "Failed to update table: " + e.getMessage());
         }
-        System.out.println("Updated table.");
     }
 }

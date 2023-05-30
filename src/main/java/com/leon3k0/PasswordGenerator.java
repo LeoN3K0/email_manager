@@ -1,7 +1,7 @@
 package com.leon3k0;
 import java.util.Random;
 
-public class Password_Gen {
+public class PasswordGenerator {
     public String generateRandomPassword() {
         String uppercaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String lowercaseLetters = "abcdefghijklmnopqrstuvwxyz";
