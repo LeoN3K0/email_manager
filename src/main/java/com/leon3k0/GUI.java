@@ -8,6 +8,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 
 public class GUI extends JFrame implements ActionListener {
     private JTextField firstNameField;
@@ -17,16 +20,20 @@ public class GUI extends JFrame implements ActionListener {
     private JTextField passwordField;
     private JTable dataTable;
     private DefaultTableModel tableModel;
+    private Database databaseTB = new Database();
 
-    public GUI(){
+    public GUI() {
         setTitle("Business Email Generator");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);
-        setLocationRelativeTo(null); 
+        setLocationRelativeTo(null);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
 
         JPanel formPanel = new JPanel(new GridBagLayout());
+        emailField = new JTextField(); // Initialize emailField
+        passwordField = new JTextField(); // Initialize passwordField
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 10, 5, 10); // Add padding between fields
 
@@ -39,6 +46,7 @@ public class GUI extends JFrame implements ActionListener {
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         firstNameField = new JTextField();
+        firstNameField.setPreferredSize(new Dimension(200, 20));
         formPanel.add(firstNameField, gbc);
 
         gbc.gridy = 2;
@@ -47,6 +55,7 @@ public class GUI extends JFrame implements ActionListener {
         gbc.gridy = 3;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         lastNameField = new JTextField();
+        lastNameField.setPreferredSize(new Dimension(200, 20));
         formPanel.add(lastNameField, gbc);
 
         gbc.gridy = 4;
@@ -55,6 +64,7 @@ public class GUI extends JFrame implements ActionListener {
         gbc.gridy = 5;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         companyField = new JTextField();
+        companyField.setPreferredSize(new Dimension(200, 20));
         formPanel.add(companyField, gbc);
 
         gbc.gridy = 6;
@@ -68,7 +78,7 @@ public class GUI extends JFrame implements ActionListener {
 
         dataTable = new JTable();
         JScrollPane scrollPane = new JScrollPane(dataTable);
-        scrollPane.setPreferredSize(new Dimension(400, 300)); // Set the initial preferred size of the scroll pane
+        scrollPane.setPreferredSize(new Dimension(375, 300)); // Set the initial preferred size of the scroll pane
         Border border = BorderFactory.createCompoundBorder(
                 new EmptyBorder(10, 10, 10, 10), // Add spacing (10 pixels) around the table
                 new LineBorder(Color.BLACK) // Add a black line border around the table
@@ -76,15 +86,39 @@ public class GUI extends JFrame implements ActionListener {
         scrollPane.setBorder(border);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        tableModel = new DefaultTableModel(new Object[]{"ID", "First Name", "Last Name", "Email", "Temp Password"}, 0);
-        dataTable.setModel(tableModel);
+        tableModel = new DefaultTableModel();
 
+        // Retrieve column names from the ResultSet metadata
+        ResultSetMetaData metaData = databaseTB.fetchMetaData();
+        int columnCount;
+        ResultSet resultSet = databaseTB.fetchData();
+        try {
+            columnCount = metaData.getColumnCount();
+            for (int i = 2; i <= columnCount; i++) {
+                tableModel.addColumn(metaData.getColumnName(i));
+            }
+
+            // Retrieve data rows from the ResultSet
+            while (resultSet.next()) {
+                Object[] rowData = new Object[columnCount];
+                for (int i = 2; i <= columnCount; i++) {
+                    rowData[i - 2] = resultSet.getObject(i);
+                }
+                tableModel.addRow(rowData);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println(e.getClass().getName() + ": " + e.getMessage());
+            System.exit(0);
+        }
+
+        dataTable.setModel(tableModel);
 
         add(mainPanel);
 
         pack();
 
-         // Add a component listener to the frame for resizing events
+        // Add a component listener to the frame for resizing events
         addComponentListener(new java.awt.event.ComponentAdapter() {
             public void componentResized(java.awt.event.ComponentEvent evt) {
                 resizeTable();
@@ -99,14 +133,13 @@ public class GUI extends JFrame implements ActionListener {
         dataTable.setPreferredScrollableViewportSize(new Dimension(tableWidth, tableHeight));
     }
 
-
     public void actionPerformed(ActionEvent e) {
         String firstName;
         String lastName;
         String email;
         String password;
-        
-        if (e.getActionCommand().equals("Generate")) {
+
+        if (e.getActionCommand().equals("Add Record")) {
             firstName = firstNameField.getText();
             lastName = lastNameField.getText();
             String company = companyField.getText();
@@ -114,20 +147,53 @@ public class GUI extends JFrame implements ActionListener {
             Password_Gen newPass = new Password_Gen();
             Database newDatabase = new Database();
 
-            if (!firstName.isEmpty() && !lastName.isEmpty() && !company.isEmpty() )
-            {
+            if (!firstName.isEmpty() && !lastName.isEmpty() && !company.isEmpty()) {
                 email = newEmail.generateEmail(firstName, lastName, company);
-                emailField.setText(email);
-
                 password = newPass.generateRandomPassword();
-                passwordField.setText(password);
+                newDatabase.insertDatabase(firstName, lastName, email, password);
 
-                newDatabase.insertDatabase(firstName, lastName, email, password);                
-            }
-            else{
-
+                updateTableModel();
+                if (emailField != null) { // Check if emailField is not null
+                    emailField.setText(email); // Set email value to emailField
+                }
+                if (passwordField != null) { // Check if passwordField is not null
+                    passwordField.setText(password); // Set password value to passwordField
+                }
+                firstNameField.setText("");
+                lastNameField.setText("");
+                companyField.setText("");
+            } else {
                 JOptionPane.showMessageDialog(rootPane, "Fields can't be blank, please fill out all fields.");
-            }            
-        } 
+            }
+        }
+    }
+
+    private void updateTableModel() {
+        // Clear the existing data in the table model
+        tableModel.setRowCount(0);
+        tableModel.setColumnCount(0);
+
+        ResultSetMetaData metaData = databaseTB.fetchMetaData();
+        int columnCount;
+        ResultSet resultSet = databaseTB.fetchData();
+        try {
+            columnCount = metaData.getColumnCount();
+            for (int i = 2; i <= columnCount; i++) {
+                tableModel.addColumn(metaData.getColumnName(i));
+            }
+
+            // Retrieve data rows from the ResultSet
+            while (resultSet.next()) {
+                Object[] rowData = new Object[columnCount];
+                for (int i = 2; i <= columnCount; i++) {
+                    rowData[i - 2] = resultSet.getObject(i);
+                }
+                tableModel.addRow(rowData);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println(e.getClass().getName() + ": " + e.getMessage());
+            System.exit(0);
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.leon3k0;
 
 import java.sql.*;
 import java.util.Properties;
+import java.sql.ResultSet;
 
 public class Database {
     Connection c = null;
@@ -43,5 +44,43 @@ public class Database {
             System.exit(0);
         }
         System.out.println("Records created successfully");
+    }
+
+    public ResultSet fetchData(){
+        ResultSet rs = null;
+        try {
+            Database db = new Database();
+            db.connectDatabase("email_gen");
+            stmt = db.c.createStatement();
+
+            rs = stmt.executeQuery( "SELECT * FROM new_hire;" );            
+            return rs;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println(e.getClass().getName()+": "+e.getMessage());
+            System.exit(0);
+        }
+        System.out.println("Operation done successfully");
+        return rs;
+    }
+
+    public ResultSetMetaData fetchMetaData(){
+        ResultSet rs = null;
+        ResultSetMetaData metaData = null;
+        try {
+            Database db = new Database();
+            db.connectDatabase("email_gen");
+            stmt = db.c.createStatement();
+
+            rs = stmt.executeQuery( "SELECT * FROM new_hire;" );
+            metaData = rs.getMetaData();
+            return metaData;                        
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println(e.getClass().getName()+": "+e.getMessage());
+            System.exit(0);
+        }
+        System.out.println("Operation done successfully");
+        return  metaData;
     }
 }
