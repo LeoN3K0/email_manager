@@ -4,10 +4,12 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -192,6 +194,18 @@ public class GUI extends JFrame implements ActionListener {
             }
             else if(dataTable.getSelectedRow() == -1) {
                 JOptionPane.showMessageDialog(rootPane, "No Record Selecected, Please Delect a Record from the Table.");
+            }
+        }
+
+        if (e.getActionCommand().equals("Export Table")){
+            
+            JFileChooser fileChooser = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("CSV Files", "csv");
+            fileChooser.setFileFilter(filter);
+            int returnValue = fileChooser.showSaveDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                newDatabase.saveCSV(file);
             }
         }
     }
