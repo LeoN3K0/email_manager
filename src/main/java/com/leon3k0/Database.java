@@ -22,7 +22,6 @@ public class Database {
             System.err.println(e.getClass().getName()+": "+e.getMessage());
             System.exit(0);
         }
-        System.out.println("Opened database successfully");
     }
 
     public void insertDatabase(String fName, String lName, String email, String tPass){
@@ -46,6 +45,28 @@ public class Database {
         System.out.println("Records created successfully");
     }
 
+    public void deleteData(String id){
+        try {
+            Database db = new Database();
+            db.connectDatabase("email_gen");
+            stmt = db.c.createStatement();
+
+            String sql = "DELETE from NEW_HIRE where ID = "+id+";";
+            stmt.executeUpdate(sql);
+            db.c.commit();
+
+            stmt.close();
+            db.c.commit();
+            db.c.close();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println(e.getClass().getName()+": "+e.getMessage());
+            System.exit(0);
+        }
+        System.out.println("Record deleted successfully");
+    }
+
     public ResultSet fetchData(){
         ResultSet rs = null;
         try {
@@ -53,26 +74,22 @@ public class Database {
             db.connectDatabase("email_gen");
             stmt = db.c.createStatement();
 
-            rs = stmt.executeQuery( "SELECT * FROM new_hire;" );            
+            rs = stmt.executeQuery( "SELECT * FROM new_hire;" );          
             return rs;
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println(e.getClass().getName()+": "+e.getMessage());
             System.exit(0);
         }
-        System.out.println("Operation done successfully");
         return rs;
+        
     }
 
     public ResultSetMetaData fetchMetaData(){
         ResultSet rs = null;
         ResultSetMetaData metaData = null;
         try {
-            Database db = new Database();
-            db.connectDatabase("email_gen");
-            stmt = db.c.createStatement();
-
-            rs = stmt.executeQuery( "SELECT * FROM new_hire;" );
+            rs = this.fetchData();
             metaData = rs.getMetaData();
             return metaData;                        
         } catch (Exception e) {
@@ -80,7 +97,8 @@ public class Database {
             System.err.println(e.getClass().getName()+": "+e.getMessage());
             System.exit(0);
         }
-        System.out.println("Operation done successfully");
         return  metaData;
     }
+
+
 }

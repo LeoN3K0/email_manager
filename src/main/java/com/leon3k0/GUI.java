@@ -67,12 +67,22 @@ public class GUI extends JFrame implements ActionListener {
         companyField.setPreferredSize(new Dimension(200, 20));
         formPanel.add(companyField, gbc);
 
-        gbc.gridy = 6;
-        gbc.weighty = 1.0;
+        gbc.gridy = 6;        
         gbc.anchor = GridBagConstraints.NORTH;
         JButton addButton = new JButton("Add Record");
         addButton.addActionListener(this);
         formPanel.add(addButton, gbc);
+
+        gbc.gridy = 7;        
+        JButton delButton = new JButton("Delete Record");
+        delButton.addActionListener(this);
+        formPanel.add(delButton, gbc);
+
+        gbc.gridy = 8;
+        gbc.weighty = 1.0;
+        JButton exButton = new JButton("Export Table");
+        exButton.addActionListener(this);
+        formPanel.add(exButton, gbc);
 
         mainPanel.add(formPanel, BorderLayout.WEST);
 
@@ -94,15 +104,15 @@ public class GUI extends JFrame implements ActionListener {
         ResultSet resultSet = databaseTB.fetchData();
         try {
             columnCount = metaData.getColumnCount();
-            for (int i = 2; i <= columnCount; i++) {
+            for (int i = 1; i <= columnCount; i++) {
                 tableModel.addColumn(metaData.getColumnName(i));
             }
 
             // Retrieve data rows from the ResultSet
             while (resultSet.next()) {
                 Object[] rowData = new Object[columnCount];
-                for (int i = 2; i <= columnCount; i++) {
-                    rowData[i - 2] = resultSet.getObject(i);
+                for (int i = 1; i <= columnCount; i++) {
+                    rowData[i - 1] = resultSet.getObject(i);
                 }
                 tableModel.addRow(rowData);
             }
@@ -112,7 +122,9 @@ public class GUI extends JFrame implements ActionListener {
             System.exit(0);
         }
 
+        System.out.println("Gathered table data from database");
         dataTable.setModel(tableModel);
+        dataTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
         add(mainPanel);
 
@@ -138,6 +150,7 @@ public class GUI extends JFrame implements ActionListener {
         String lastName;
         String email;
         String password;
+        Database newDatabase = new Database();
 
         if (e.getActionCommand().equals("Add Record")) {
             firstName = firstNameField.getText();
@@ -145,7 +158,7 @@ public class GUI extends JFrame implements ActionListener {
             String company = companyField.getText();
             Email_Gen newEmail = new Email_Gen();
             Password_Gen newPass = new Password_Gen();
-            Database newDatabase = new Database();
+            
 
             if (!firstName.isEmpty() && !lastName.isEmpty() && !company.isEmpty()) {
                 email = newEmail.generateEmail(firstName, lastName, company);
@@ -166,6 +179,21 @@ public class GUI extends JFrame implements ActionListener {
                 JOptionPane.showMessageDialog(rootPane, "Fields can't be blank, please fill out all fields.");
             }
         }
+        if (e.getActionCommand().equals("Delete Record")) {
+            int col = 0;
+
+            if(dataTable.getSelectedRow() != -1)
+            {
+                int row = dataTable.getSelectedRow();
+                String val = dataTable.getValueAt(row, col).toString();
+
+                newDatabase.deleteData(val);
+                updateTableModel();
+            }
+            else if(dataTable.getSelectedRow() == -1) {
+                JOptionPane.showMessageDialog(rootPane, "No Record Selecected, Please Delect a Record from the Table.");
+            }
+        }
     }
 
     private void updateTableModel() {
@@ -178,15 +206,15 @@ public class GUI extends JFrame implements ActionListener {
         ResultSet resultSet = databaseTB.fetchData();
         try {
             columnCount = metaData.getColumnCount();
-            for (int i = 2; i <= columnCount; i++) {
+            for (int i = 1; i <= columnCount; i++) {
                 tableModel.addColumn(metaData.getColumnName(i));
             }
 
             // Retrieve data rows from the ResultSet
             while (resultSet.next()) {
                 Object[] rowData = new Object[columnCount];
-                for (int i = 2; i <= columnCount; i++) {
-                    rowData[i - 2] = resultSet.getObject(i);
+                for (int i = 1; i <= columnCount; i++) {
+                    rowData[i - 1] = resultSet.getObject(i);
                 }
                 tableModel.addRow(rowData);
             }
@@ -195,5 +223,6 @@ public class GUI extends JFrame implements ActionListener {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
         }
+        System.out.println("Updated table.");
     }
 }
