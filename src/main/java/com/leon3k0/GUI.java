@@ -15,6 +15,11 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 public class GUI extends JFrame implements ActionListener {
+    private JTextField hostField;
+    private JTextField portField;
+    private JTextField usernameField;
+    private JPasswordField dbPasswordField;
+    private JTextField dbNameField;
     private JTextField firstNameField;
     private JTextField lastNameField;
     private JTextField companyField;
@@ -30,6 +35,8 @@ public class GUI extends JFrame implements ActionListener {
         setSize(800, 600);
         setLocationRelativeTo(null);
 
+        showConnectionInfoPopup();
+
         createUI();
 
         // Add a component listener to the frame for resizing events
@@ -38,6 +45,45 @@ public class GUI extends JFrame implements ActionListener {
                 resizeTable();
             }
         });
+    }
+
+    private void showConnectionInfoPopup() {
+        hostField = new JTextField();
+        portField = new JTextField();
+        usernameField = new JTextField();
+        dbPasswordField = new JPasswordField();
+        dbNameField = new JTextField();
+
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        panel.add(new JLabel("Host:"));
+        panel.add(hostField);
+        panel.add(new JLabel("Port:"));
+        panel.add(portField);
+        panel.add(new JLabel("Username:"));
+        panel.add(usernameField);
+        panel.add(new JLabel("Password:"));
+        panel.add(dbPasswordField);
+        panel.add(new JLabel("Database Name:"));
+        panel.add(dbNameField);
+
+        JButton demoButton = new JButton("Demo"); // Create a new JButton
+        demoButton.addActionListener(this);
+        panel.add(demoButton); // Add the demo button to the panel
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Database Connection Information",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result == JOptionPane.OK_OPTION) {
+            String host = hostField.getText();
+            String port = portField.getText();
+            String username = usernameField.getText();
+            String password = new String(dbPasswordField.getPassword());
+            String dbName = dbNameField.getText();
+    
+            DatabaseConfig.updateConfig(host, port, username, password, dbName);
+        } else {
+            System.exit(0);
+        }
     }
 
     private void createUI() {
@@ -133,7 +179,18 @@ public class GUI extends JFrame implements ActionListener {
             deleteRecord();
         } else if (e.getActionCommand().equals("Export Table")) {
             exportTable();
+        } else if (e.getActionCommand().equals("Demo")) {
+            demoMode();
         }
+    }
+
+    private void demoMode(){
+        DatabaseConfig.setDemoMode(true);
+        hostField.setText("Demo");
+        portField.setText("Demo");
+        usernameField.setText("Demo");
+        dbPasswordField.setText("61OAnQKhybpB");
+        dbNameField.setText("Demo");
     }
 
     private void addRecord(){

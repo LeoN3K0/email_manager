@@ -12,12 +12,17 @@ import java.sql.ResultSet;
 
 public class DatabaseManager {
     private Connection getConnection() throws SQLException {
-        String url = "jdbc:postgresql://localhost/email_gen";
         Properties props = new Properties();
-        props.setProperty("user", "postgres");
-        props.setProperty("password", "left4dead2");
+        props.setProperty("user", DatabaseConfig.username);
+        props.setProperty("password", DatabaseConfig.password);
 
-        return DriverManager.getConnection(url, props);
+        if(DatabaseConfig.isDemoMode()){
+            return DriverManager.getConnection(DatabaseConfig.url);
+        }
+        else {
+            return DriverManager.getConnection(DatabaseConfig.url, props);
+        }
+        
     }
 
     public void insertData(String fName, String lName, String email, String tPass){
